@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Chat from './screens/Chat';
 import Settings from './screens/Settings';
 import {Text} from 'react-native'
+import Bluetooth from './screens/Bluetooth';
 
 const Tab = createBottomTabNavigator();
 
@@ -28,6 +29,15 @@ export default function Navigation() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>💬</Text>
+          ),
+        }}
+      />
+       <Tab.Screen 
+        name="Bt/Wifi" 
+        component={Bluetooth} 
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>BT/Wifi</Text>
           ),
         }}
       />

@@ -10,7 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { useAppContext } from '../context/AppContext';
+import axios from 'axios'; // Import axios
 
 const Chat = () => {
   const [messages, setMessages] = useState([
@@ -20,16 +23,14 @@ const Chat = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef(null);
+  const { name, location, bluetoothAddress, baseURL, nearestDevice, nearestNeighbors } = useAppContext();
+  
 
-  // Sample AI responses for testing
-  const sampleResponses = [
-    "I'm a sample AI assistant. In the future, I'll be powered by Ollama!",
-    "That's an interesting question. Let me provide some information on that topic.",
-    "I can help you with various tasks like answering questions, providing explanations, or generating text.",
-    "The Ollama integration will allow me to use different language models to generate more accurate responses.",
-  ];
+  let username = 'admin';
+  let password = 'KHtj9wOh3WUtHDnM3thIzNDkmk3eDn5z';
+  let token = btoa(`${username}:${password}`);
+  
 
-  // Scroll to bottom whenever messages change
   useEffect(() => {
     if (flatListRef.current && messages.length > 0) {
       setTimeout(() => {
@@ -53,54 +54,121 @@ const Chat = () => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputText('');
     
-    // Simulate AI response (will be replaced with Ollama API call)
+    // Start loading indicator
     setIsLoading(true);
     
-    // Simulate API delay
-    setTimeout(() => {
-      // Get random sample response
-      const randomResponse = sampleResponses[Math.floor(Math.random() * sampleResponses.length)];
+    handleFetchAPICall();
+  };
+
+  const handleAPICall = async() => {
+    try {
+      // Call the API with axios (using the format from the curl command)
+      const response = await axios.post('https://major.waferlabs.com:16384/chat/', {
+        "nearest": "aa",
+        "neighbour": [],
+        "name": "AA",
+        "prompt": inputText.trim()
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+           'Authorization': 'YWRtaW46S0h0ajl3T2gzV1V0SERuTTN0aEl6TkRrbWszZURuNXo'
+        }
+      });
+      console.log("api is called :: ")
+      // Extract response data
+      const aiResponse = response.data;
+      console.log("airesponse is :: ", response)
       
+      // Create AI message
       const aiMessage = {
         id: (Date.now() + 1).toString(),
-        text: randomResponse,
+        text: aiResponse.response || aiResponse.toString(),
         sender: 'ai',
         timestamp: new Date().toISOString(),
       };
       
+      // Add AI message to chat
       setMessages(prevMessages => [...prevMessages, aiMessage]);
+    } catch (error) {
+      console.error('Error fetching from API:', error);
+      
+      // Handle error and display message to user
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        text: `Sorry, I encountered an error: ${error.message}`,
+        sender: 'ai',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  };
+    }
+  }
 
-  // Function that will be used for Ollama API integration
-  const fetchOllamaResponse = async (prompt) => {
-    // This is a placeholder function for future Ollama API integration
-    // Example implementation might look like:
-    /*
+  const handleFetchAPICall = async () => {
+    // const username = 'admin';
+    // const password = 'KHtj9wOh3WUtHDnM3thIzNDkmk3eDn5z';
+    // const token = btoa(`${username}:${password}`);
+    const body = JSON.stringify({
+      nearest: "aa",
+      neighbour: [],
+      name: name,
+      prompt: inputText.trim()
+    })
     try {
-      const response = await fetch('YOUR_OLLAMA_ENDPOINT', {
+      const response = await fetch('https://major.waferclabs.com:16384/chat/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Basic ${token}`
         },
-        body: JSON.stringify({
-          model: 'YOUR_MODEL_NAME',
-          prompt: prompt,
-          stream: false,
-        }),
+        body: body
       });
-      
-      const data = await response.json();
-      return data.response;
+
+    console.log("body is :: ",body)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const aiResponse = await response.json();
+      console.log("AI Response is :: ", aiResponse);
+  
+      const aiMessage = {
+        id: (Date.now() + 1).toString(),
+        text: aiResponse.response || aiResponse.toString(),
+        sender: 'ai',
+        timestamp: new Date().toISOString(),
+      };
+      setIsLoading(false);
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      getNodes();
     } catch (error) {
-      console.error('Error fetching from Ollama:', error);
-      return 'Sorry, I encountered an error processing your request.';
+      console.error("API call failed:", error);
     }
-    */
-    
-    // For now, return a sample response
-    return sampleResponses[Math.floor(Math.random() * sampleResponses.length)];
+  };
+  
+  const getNodes = async () => { 
+    const response = await fetch('https://major.waferclabs.com:16384/nodes/', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Basic ${token}`
+      }
+    });
+  
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+  
+    const data = await response.json();
+    console.log('Response: od node is :: ', data);
+    console.log("nearest devie is:: ", nearestDevice)
+    console.log("nearest negbour is :: ", nearestNeighbors)
+    console.log(bluetoothAddress)
   };
 
   // Format timestamp
@@ -154,7 +222,7 @@ const Chat = () => {
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#0d6efd" />
-            <Text style={styles.loadingText}>AI is typing...</Text>
+            <Text style={styles.loadingText}>AI is responding...</Text>
           </View>
         )}
         

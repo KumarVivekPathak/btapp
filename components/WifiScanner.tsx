@@ -1,4 +1,4 @@
-// components/WifiDevices.js
+// components/WifiScanner.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import WifiManager from 'react-native-wifi-reborn';
 
-const WifiDevices = () => {
+const WifiScanner = () => {
   const [wifiList, setWifiList] = useState([]);
   const [scanning, setScanning] = useState(false);
 
@@ -250,4 +250,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WifiDevices;
+export default WifiScanner;

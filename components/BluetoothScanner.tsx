@@ -1,4 +1,3 @@
-// components/BluetoothDevices.js
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -12,10 +11,13 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 import { BleManager } from 'react-native-ble-plx';
+import { useAppContext } from '../context/AppContext';
 
-const BluetoothDevices = () => {
+
+const BluetoothScanner = () => {
   const [devices, setDevices] = useState([]);
   const [scanning, setScanning] = useState(false);
+  const { setNearestDevice, setNearestNeighbors } = useAppContext();
   const bleManager = useMemo(() => new BleManager(), []);
 
   useEffect(() => {
@@ -23,6 +25,20 @@ const BluetoothDevices = () => {
       bleManager.destroy();
     };
   }, [bleManager]);
+
+  useEffect(() => {
+    scanDevices();
+
+    const scanInterval = setInterval(() => {
+      scanDevices();
+    }, 10 * 60 * 1000); 
+   
+    return () => {
+      clearInterval(scanInterval);
+      bleManager.destroy();
+    };
+  }, []); 
+
 
   const requestPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -89,6 +105,32 @@ const BluetoothDevices = () => {
     }, true);
   };
 
+  const updateDeviceList = (device) => { 
+    setDevices((prevDevices) => {
+      const existingIndex = prevDevices.findIndex(d => d.id === device.id);
+      if (existingIndex !== -1) {
+       
+        const updatedDevices = [...prevDevices];
+        updatedDevices[existingIndex] = device;
+        return updatedDevices;
+      } else {
+        return [...prevDevices, device];
+      }
+    });
+    updateNearestDevices();
+  };
+  
+  const updateNearestDevices = () => {
+    const sortedDevices = [...devices].sort((a, b) => b.rssi - a.rssi);
+
+    if (sortedDevices.length > 0) {
+      setNearestDevice(sortedDevices[0]);
+    }
+
+    const neighbors = sortedDevices.slice(1, 5);
+    setNearestNeighbors(neighbors);
+  };
+
   const startScan = () => {
     bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
@@ -98,14 +140,14 @@ const BluetoothDevices = () => {
       }
       
       if (device) {
-        console.log(" device is :: ",device)
-        setDevices((prevDevices) => {
-          // Check if device already exists in our array
-          if (!prevDevices.find(d => d.id === device.id)) {
-            return [...prevDevices, device];
-          }
-          return prevDevices;
-        });
+        updateDeviceList(device);
+        // setDevices((prevDevices) => {
+        //   // Check if device already exists in our array
+        //   if (!prevDevices.find(d => d.id === device.id)) {
+        //     return [...prevDevices, device];
+        //   }
+        //   return prevDevices;
+        // });
       }
     });
 
@@ -113,7 +155,7 @@ const BluetoothDevices = () => {
     setTimeout(() => {
       bleManager.stopDeviceScan();
       setScanning(false);
-    }, 10000);
+    }, 3000);
   };
 
   const stopScan = () => {
@@ -164,7 +206,7 @@ const BluetoothDevices = () => {
         </View>
       ) : (
         <FlatList
-          data={devices}
+          data={devices.sort((a, b) => b?.rssi - a?.rssi)}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
@@ -265,4 +307,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BluetoothDevices;
+export default BluetoothScanner;

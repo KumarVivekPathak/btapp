@@ -1,45 +1,79 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import BluetoothDevices from '../components/BluetoothDevices';
-import WifiDevices from '../components/WifiDevices';
+import { View, Text, StyleSheet, Button, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import CustomInput from '../components/CustomInput';
+import { useAppContext } from '../context/AppContext';
+
 
 const Settings = () => {
-      const [activeTab, setActiveTab] = useState('bluetooth');
+  // const [name, setName] = useState('');
+  // const [location, setLocation] = useState('');
+  // const [bluetoothAddress, setBluetoothAddress] = useState('');
+  // const [baseURL, setBaseURL] = useState('');
+  const { baseURL, setBaseURL, name, setName, location, setLocation, bluetoothAddress, setBluetoothAddress } = useAppContext();
+
+  const handleSave = () => {
+    const settingsData = {
+      name,
+      location,
+      bluetoothAddress,
+      baseURL,
+    };
+    console.log('Settings Data:', JSON.stringify(settingsData, null, 2));
+    Alert.alert('Success', 'Settings saved locally (check console), '+ JSON.stringify(settingsData));
+  };
+
   return (
-    <View>
-      <Text style={styles.headerTitle}>Device Scanner</Text>
-            
-            <View style={styles.tabContainer}>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'bluetooth' ? styles.activeTab : null]} 
-                onPress={() => setActiveTab('bluetooth')}
-              >
-                <Text style={[styles.tabText, activeTab === 'bluetooth' ? styles.activeTabText : null]}>Bluetooth</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'wifi' ? styles.activeTab : null]} 
-                onPress={() => setActiveTab('wifi')}
-              >
-                <Text style={[styles.tabText, activeTab === 'wifi' ? styles.activeTabText : null]}>WiFi</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.contentContainer}>
-              {activeTab === 'bluetooth' ? (
-                <BluetoothDevices />
-              ) : (
-                <WifiDevices />
-              )}
-            </View>
-    </View>
+    <KeyboardAvoidingView 
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    style={styles.container}
+  >
+    <ScrollView style={styles.scrollView}>
+    
+      <View style={styles.contentContainer}>
+        <View style={styles.profileContainer}>
+          <CustomInput
+            label="Name"
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your name"
+          />
+          <CustomInput
+            label="Location"
+            value={location}
+            onChangeText={setLocation}
+            placeholder="Enter your location"
+          />
+          <CustomInput
+            label="Bluetooth Address"
+            value={bluetoothAddress}
+            onChangeText={setBluetoothAddress}
+            placeholder="Enter Bluetooth address"
+          />
+          <CustomInput
+            label="Base URL"
+            value={baseURL}
+            onChangeText={setBaseURL}
+            placeholder="Enter base URL"
+          />
+
+          <View style={styles.buttonContainer}>
+            <Button title="Save Settings" onPress={handleSave} />
+          </View>
+        </View>
+      </View>
+  
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  scrollView: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
@@ -48,35 +82,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 16,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#e9ecef',
-    marginBottom: 16,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  activeTab: {
-    backgroundColor: '#0d6efd',
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#495057',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
   contentContainer: {
     flex: 1,
     marginHorizontal: 16,
   },
+  profileContainer: {
+    marginTop: 20,
+  },
+  buttonContainer: {
+    marginTop: 24,
+  },
 });
-
 
 export default Settings;
